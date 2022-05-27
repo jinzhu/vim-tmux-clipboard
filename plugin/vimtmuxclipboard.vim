@@ -14,7 +14,7 @@ endfunc
 
 func! s:Enable()
 
-    if $TMUX=='' 
+    if $TMUX==''
         " not in tmux session
         return
     endif
@@ -28,7 +28,7 @@ func! s:Enable()
             autocmd!
             autocmd FocusLost * call s:update_from_tmux()
             autocmd	FocusGained   * call s:update_from_tmux()
-            autocmd TextYankPost * silent! call system('tmux loadb -',join(v:event["regcontents"],"\n"))
+            autocmd TextYankPost * silent! call system('tmux loadb -; ~/.tmux/save_buffer_to_clipboard.sh',join(v:event["regcontents"],"\n"))
         augroup END
         let @" = s:TmuxBuffer()
     else
@@ -36,7 +36,7 @@ func! s:Enable()
         " This is a workaround for vim
         augroup vimtmuxclipboard
             autocmd!
-            autocmd FocusLost     *  silent! call system('tmux loadb -',@")
+            autocmd FocusLost     *  silent! call system('tmux loadb -; ~/.tmux/save_buffer_to_clipboard.sh',@")
             autocmd	FocusGained   *  let @" = s:TmuxBuffer()
         augroup END
         let @" = s:TmuxBuffer()
