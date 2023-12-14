@@ -1,4 +1,6 @@
 
+let g:vim_tmux_clipboard#loadb_option = get(g:, 'vim_tmux_clipboard#loadb_option', '')
+
 func! s:TmuxBufferName()
     let l:list = systemlist('tmux list-buffers -F"#{buffer_name}"')
     if len(l:list)==0
@@ -8,13 +10,21 @@ func! s:TmuxBufferName()
     endif
 endfunc
 
+function! s:on_stdout(job_id, data, event)
+    let @" = join(a:data, "\n")
+endfunction
+
+func! s:AsyncTmuxBuffer()
+    call jobstart('tmux show-buffer', {'on_stdout': function('s:on_stdout'), 'stdout_buffered': 1})
+endfunc
+
 func! s:TmuxBuffer()
     return system('tmux show-buffer')
 endfunc
 
 func! s:Enable()
 
-    if $TMUX==''
+    if $TMUX=='' 
         " not in tmux session
         return
     endif
@@ -27,16 +37,20 @@ func! s:Enable()
         augroup vimtmuxclipboard
             autocmd!
             autocmd FocusLost * call s:update_from_tmux()
-            autocmd	FocusGained   * call s:update_from_tmux()
-            autocmd TextYankPost * silent! call system('tmux loadb -; ~/.tmux/save_buffer_to_clipboard.sh',join(v:event["regcontents"],"\n"))
+            autocmd	FocusGained * call s:update_from_tmux()
+            autocmd TextYankPost * silent! call system('tmux loadb ' . g:vim_tmux_clipboard#loadb_option . ' -; ~/.tmux/save_buffer_to_clipboard.sh',join(v:event["regcontents"],"\n"))
         augroup END
-        let @" = s:TmuxBuffer()
+        if exists('*jobstart')==1 " Only supported on Neovim
+            call s:AsyncTmuxBuffer()
+        else
+            let @" = s:TmuxBuffer()
+        endif
     else
         " vim doesn't support TextYankPost event
         " This is a workaround for vim
         augroup vimtmuxclipboard
             autocmd!
-            autocmd FocusLost     *  silent! call system('tmux loadb -; ~/.tmux/save_buffer_to_clipboard.sh',@")
+            autocmd FocusLost     *  silent! call system('tmux loadb ' . g:vim_tmux_clipboard#loadb_option . ' -; ~/.tmux/save_buffer_to_clipboard.sh',@")
             autocmd	FocusGained   *  let @" = s:TmuxBuffer()
         augroup END
         let @" = s:TmuxBuffer()
@@ -61,4 +75,4 @@ call s:Enable()
 " 	");
 " 	let g:tmp_cmd='tmux set-buffer ' . l:s
 " endif
-" silent! call system('tmux loadb -',l:s)
+" silent! call system('tmux loadb -w -',l:s)
