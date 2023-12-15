@@ -36,7 +36,7 @@ func! s:Enable()
         " @"
         augroup vimtmuxclipboard
             autocmd!
-            autocmd FocusLost * call s:update_from_tmux()
+            " autocmd FocusLost * call s:update_from_tmux()
             autocmd	FocusGained * call s:update_from_tmux()
             autocmd TextYankPost * silent! call system('tmux loadb ' . g:vim_tmux_clipboard#loadb_option . ' -; ~/.tmux/save_buffer_to_clipboard.sh',join(v:event["regcontents"],"\n"))
         augroup END
